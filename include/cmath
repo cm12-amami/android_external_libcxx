@@ -1617,8 +1617,8 @@ typename enable_if<is_integral<_A1>::value, double>::type
 trunc(_A1 __x) _NOEXCEPT {return trunc((double)__x);}
 
 template <class _IntT, class _FloatT,
-    bool _FloatBigger = (numeric_limits<_FloatT>::digits > numeric_limits<_IntT>::digits),
-    int _Bits = (numeric_limits<_IntT>::digits - numeric_limits<_FloatT>::digits)>
+    bool _FloatBigger,
+    int _Bits>
 _LIBCPP_INLINE_VISIBILITY
 _LIBCPP_CONSTEXPR _IntT __max_representable_int_for_float() _NOEXCEPT {
   static_assert((is_floating_point<_FloatT>::value), "must be a floating point type");
@@ -1629,6 +1629,14 @@ _LIBCPP_CONSTEXPR _IntT __max_representable_int_for_float() _NOEXCEPT {
   return _FloatBigger ? numeric_limits<_IntT>::max() :  (numeric_limits<_IntT>::max() >> _Bits << _Bits);
 }
 
+template <class _IntT, class _FloatT>
+_LIBCPP_INLINE_VISIBILITY
+_LIBCPP_CONSTEXPR _IntT __max_representable_int_for_float() _NOEXCEPT {
+  return __max_representable_int_for_float<_IntT, _FloatT,
+    (numeric_limits<_FloatT>::digits > numeric_limits<_IntT>::digits),
+    (numeric_limits<_IntT>::digits - numeric_limits<_FloatT>::digits)>();
+}
+
 // Convert a floating point number to the specified integral type after
 // clamping to the integral types representable range.
 //
@@ -1636,7 +1644,7 @@ _LIBCPP_CONSTEXPR _IntT __max_representable_int_for_float() _NOEXCEPT {
 template <class _IntT, class _RealT>
 _LIBCPP_INLINE_VISIBILITY
 _IntT __clamp_to_integral(_RealT __r) _NOEXCEPT {
-  using _Lim = numeric_limits<_IntT>;
+  typedef numeric_limits<_IntT> _Lim;
   const _IntT _MaxVal = std::__max_representable_int_for_float<_IntT, _RealT>();
   if (__r >= ::nextafter(static_cast<_RealT>(_MaxVal), INFINITY)) {
     return _Lim::max();
